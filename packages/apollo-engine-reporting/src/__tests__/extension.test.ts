@@ -1,18 +1,18 @@
-import { makeExecutableSchema, addMockFunctionsToSchema } from "graphql-tools";
+import { makeExecutableSchema, addMockFunctionsToSchema } from 'graphql-tools';
 import {
   GraphQLExtensionStack,
-  enableGraphQLExtensions
-} from "graphql-extensions";
-import { graphql, GraphQLError } from "graphql";
-import { Request } from "node-fetch";
+  enableGraphQLExtensions,
+} from 'graphql-extensions';
+import { graphql, GraphQLError } from 'graphql';
+import { Request } from 'node-fetch';
 import {
   EngineReportingExtension,
   makeTraceDetails,
-  makeHTTPRequestHeaders
-} from "../extension";
-import { Headers } from "apollo-server-env";
-import { InMemoryLRUCache } from "apollo-server-caching";
-import { Trace } from "apollo-engine-reporting-protobuf";
+  makeHTTPRequestHeaders,
+} from '../extension';
+import { Headers } from 'apollo-server-env';
+import { InMemoryLRUCache } from 'apollo-server-caching';
+import { Trace } from 'apollo-engine-reporting-protobuf';
 
 const emptyMockLogger = {
   warn: jest.fn(),
@@ -364,10 +364,10 @@ describe('tests for the shouldReportQuery reporting option', () => {
       {
         shouldReportQuery: () => {
           return false;
-        }
+        },
       },
       addTrace,
-      "schema-hash"
+      'schema-hash',
     );
 
     const stack = new GraphQLExtensionStack([reportingExtension]);
@@ -386,9 +386,20 @@ describe('tests for the shouldReportQuery reporting option', () => {
     };
 
     const requestDidEnd = stack.requestDidStart({
-      request: new Request("http://localhost:123/foo"),
+      request: new Request('http://localhost:123/foo'),
       queryString: query,
-      requestContext: requestContext,
+      requestContext: {
+        request: {
+          query,
+          operationName: 'q',
+          extensions: {
+            clientName: 'testing suite',
+          },
+        },
+        context: {},
+        metrics: {},
+        cache: new InMemoryLRUCache(),
+      },
       context: {}
     });
 
@@ -413,11 +424,11 @@ describe('tests for the shouldReportQuery reporting option', () => {
     const reportingExtension = new EngineReportingExtension(
       {
         shouldReportQuery: request => {
-          return request.request.operationName === "report";
-        }
+          return request.request.operationName === 'report';
+        },
       },
       addTrace,
-      "schema-hash"
+      'schema-hash',
     );
 
     const requestContext = {
@@ -436,16 +447,27 @@ describe('tests for the shouldReportQuery reporting option', () => {
 
     const stack = new GraphQLExtensionStack([reportingExtension]);
     const requestDidEnd = stack.requestDidStart({
-      request: new Request("http://localhost:123/foo"),
+      request: new Request('http://localhost:123/foo'),
       queryString: queryReport,
-      requestContext: requestContext,
+      requestContext: {
+        request: {
+          queryReport,
+          operationName: 'report',
+          extensions: {
+            clientName: 'testing suite',
+          },
+        },
+        context: {},
+        metrics: {},
+        cache: new InMemoryLRUCache(),
+      },
       context: {}
     });
 
     await graphql({
       schema,
       source: queryReport,
-      contextValue: { _extensionStack: stack }
+      contextValue: { _extensionStack: stack },
     });
 
     requestDidEnd();
@@ -469,7 +491,7 @@ describe('tests for the shouldReportQuery reporting option', () => {
 
 
     const request2DidEnd = stack.requestDidStart({
-      request: new Request("http://localhost:123/foo"),
+      request: new Request('http://localhost:123/foo'),
       queryString: query,
       requestContext: requestContext2,
       context: {}
